@@ -18,16 +18,28 @@ const bot = new Telegraf(BOT_TOKEN);
 const userSessions = {};
 
 // === БАЗА ДАННЫХ FIREBASE ===
-const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+try {
+    if (!process.env.FIREBASE_CONFIG) {
+        throw new Error("Переменная окружения FIREBASE_CONFIG пуста или не найдена в Render!");
+    }
+    
+    // Чистим строку на случай, если туда случайно попали лишние пробелы или переносы
+    const cleanJsonString = process.env.FIREBASE_CONFIG.trim();
+    const serviceAccount = JSON.parse(cleanJsonString);
 
-admin.initializeApp({
-  credential: cert(serviceAccount)
-});
+    admin.initializeApp({
+        credential: cert(serviceAccount)
+    });
+
+    console.log("🔥 Firebase успешно инициализирован!");
+} catch (error) {
+    console.error("🚨 КРИТИЧЕСКАЯ ОШИБКА ИНИЦИАЛИЗАЦИИ FIREBASE:");
+    console.error(error.message);
+    // Это покажет в логах Render, на какой именно строчке упал JSON.parse
+}
 
 const db = getFirestore(); 
 const usersCollection = db.collection('users');
-
-// === ДАЛЬШЕ ИДЕТ ВЕСЬ ТВОЙ ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ ===
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
@@ -362,7 +374,7 @@ bot.action(/^check_crypto_(\d+)$/, async (ctx) => {
     }
 });
 
-// === EXPRESS WEB API (ОНОВЛЕНИЙ І ЗБЕРЕЖЕНИЙ) ===
+// === EXPRESS WEB API ===
 const app = express();
 
 app.use((req, res, next) => {
@@ -382,7 +394,7 @@ app.get('/user/:token', async (req, res) => {
         }
 
         const userRawData = snapshot.docs[0].data();
-        let photoUrl = "./photo.jpeg"; // Дефолтне фото
+        let photoUrl = "./photo.jpeg"; 
         
         if (userRawData.photo_file_id) {
             try {
