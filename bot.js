@@ -7,10 +7,10 @@ const { cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 
 // === КОНФИГУРАЦИЯ ===
-// Збережи тут свої токени, якщо вони зміняться
-const BOT_TOKEN = '7968411624:AAH0HCiht5fWUlBvzlGZtUy2zuWodGoe5Z0'; 
-const CRYPTO_BOT_TOKEN = '593822:AAyKKvZzs6f8zjghQDX4zSth5dWabQUwy2Q'; 
-const PORT = process.env.PORT || 3000; // Змінено для деплою 24/7 (Render/Railway підставлять свій порт)
+// Секреты теперь читаются из безопасного окружения Render, в коде пусто!
+const BOT_TOKEN = process.env.BOT_TOKEN; 
+const CRYPTO_BOT_TOKEN = process.env.CRYPTO_BOT_TOKEN; 
+const PORT = process.env.PORT || 3000; 
 
 const bot = new Telegraf(BOT_TOKEN);
 
@@ -18,7 +18,6 @@ const bot = new Telegraf(BOT_TOKEN);
 const userSessions = {};
 
 // === БАЗА ДАННЫХ FIREBASE ===
-// Бот більше не шукає файл у папці, а читає його прямо з налаштувань Render
 const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
 
 admin.initializeApp({
@@ -27,6 +26,8 @@ admin.initializeApp({
 
 const db = getFirestore(); 
 const usersCollection = db.collection('users');
+
+// === ДАЛЬШЕ ИДЕТ ВЕСЬ ТВОЙ ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ ===
 
 // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
