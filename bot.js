@@ -18,7 +18,8 @@ const bot = new Telegraf(BOT_TOKEN);
 const userSessions = {};
 
 // === БАЗА ДАННЫХ FIREBASE ===
-const serviceAccount = require('./firebase-key.json');
+// Бот більше не шукає файл у папці, а читає його прямо з налаштувань Render
+const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
 
 admin.initializeApp({
   credential: cert(serviceAccount)
@@ -85,7 +86,7 @@ bot.on('photo', async (ctx) => {
     session.photo = photo.file_id;
     session.step = 'name';
 
-    await ctx.reply(`Введіть ПІБ.\n\nПриклад:\nІванов Іван Іванович`);
+    await ctx.reply(`Введіть ПІБ.\n\nПриклад:\n\nИванов Иван Иванович`);
 });
 
 bot.on('text', async (ctx) => {
@@ -97,7 +98,7 @@ bot.on('text', async (ctx) => {
     if (session.step === 'name') {
         session.fullName = ctx.message.text.trim();
         session.step = 'birth';
-        return ctx.reply(`Введіть дату народження.\n\nПриклад:\n15.08.2008`);
+        return ctx.reply(`Введіть дату народження.\n\nПриклад:\n\n15.08.2008`);
     }
 
     if (session.step === 'birth') {
@@ -111,7 +112,7 @@ bot.on('text', async (ctx) => {
                     photo_file_id: session.photo
                 });
 
-                await ctx.reply('🎉 Ваші дані успішно оновлено!');
+                await ctx.reply('🎉 Ваші дані успешно оновлено!');
                 delete userSessions[targetId]; 
                 return await sendMainMenu(ctx);
             }
@@ -206,7 +207,7 @@ bot.action('menu_token', async (ctx) => {
         const userDoc = await usersCollection.doc(targetId).get();
         if (!userDoc.exists) return ctx.reply('Користувача не знайдено.');
         
-        await ctx.reply(`🔑 Ваш унікальний код авторизації для додатка:\n\n\`${userDoc.data().token}\`\n\nСкопіюйте та вставте його при вході в додаток на сайті.`, {
+        await ctx.reply(`🔑 Ваш унікальний код авторизації для додатка:\n\n\`${userDoc.data().token}\`\n\nScoпіюйте та вставте його при вході в додаток на сайті.`, {
             parse_mode: 'Markdown',
             ...Markup.inlineKeyboard([Markup.button.callback('⬅️ В меню', 'back_to_menu')])
         });
@@ -363,14 +364,12 @@ bot.action(/^check_crypto_(\d+)$/, async (ctx) => {
 // === EXPRESS WEB API (ОНОВЛЕНИЙ І ЗБЕРЕЖЕНИЙ) ===
 const app = express();
 
-// 🛑 ДОДАНО ЦЕЙ БЛОК (CORS кусок для зв'язку ПК кента з твоїм сервером)
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
 });
 
-// 🔄 ОНОВЛЕНО ЦЕЙ МЕТОД (Тепер він вміє діставати пряме посилання на аватарку)
 app.get('/user/:token', async (req, res) => {
     const token = req.params.token;
 
@@ -384,7 +383,6 @@ app.get('/user/:token', async (req, res) => {
         const userRawData = snapshot.docs[0].data();
         let photoUrl = "./photo.jpeg"; // Дефолтне фото
         
-        // Перетворюємо Telegram file_id на робоче URL посилання
         if (userRawData.photo_file_id) {
             try {
                 const fileLink = await bot.telegram.getFileLink(userRawData.photo_file_id);
@@ -394,7 +392,6 @@ app.get('/user/:token', async (req, res) => {
             }
         }
 
-        // Віддаємо збагачений об'єкт у React
         res.json({
             telegram_id: userRawData.telegram_id,
             full_name: userRawData.full_name,
